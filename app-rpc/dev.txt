@@ -1,0 +1,36 @@
+/app-rpc/dtest/lib/app-rpc-factory.jar:
+  app.event.AppEventManager.class
+  app.util.PluginProxyKit.class
+  app.util.ProtoProxyKit.class
+  app.rpc.remote.DefaultRemoteMethodFactory.class
+  app.rpc.remote.spring
+  app.rpc.remote.spring.tag
+
+
+
+AppHandler可用属性表：
+
+   app.base.AppContext.APP_ATTR_NAME                  获取AppContext
+   app.net.AppSession.SESSION_MESSAGE_CONVERTER       发送消息转换器app.net.IAppMessageConverter
+   app.rpc.remote.deploy.DeployHandler.DEPLOY_CONTEXT_HANDLER   部署处理器app.rpc.remote.deploy.DeployHandler
+   AppSession.SESSION_RECV_TIMEOUT                    默认响应超时毫秒
+   app.rpc.remote.plugins.GatewayServerHandlerPlugin.APP_ATTR_NAME    网关处理器
+   app.net.ServerManager.APP_ATTR_NAME                获取管理器app.net.ServerManager
+   
+DeployContext可用属性：
+
+  app.rpc.remote.deploy.DeployContext.ATTR_BEAN_CREATOR  导出类对象创建器
+  
+  
+  onLoad: 
+      ThreadContext.getAttribute(app.rpc.remote.deploy.DeployContext.ATTR_DEPLOY_CONTEXT);   当前部署容器
+      ThreadContext.getAttribute(ThreadContext.SCOPE_APP);  // 当前服务器Handler
+      
+      
+Session可用属性：
+  
+  app.net.AppSession.SESSION_KEPLIVE_TIMEOUT          保持在线，空闲超时时间毫秒
+  session.getAttribute(ObjectSession.LOGIN_USER);     获取连接用户信息app.rpc.remote.service.LoginParameter
+  
+  
+  

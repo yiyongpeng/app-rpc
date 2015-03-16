@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.my-rice.org/schema/remote"
+	elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://www.my-rice.org/schema/remote" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans">
+
+	<xsd:import namespace="http://www.springframework.org/schema/beans" />
+
+	<xsd:element name="remote">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+
+					<xsd:attribute name="interfaces"
+						type="xsd:string">
+					</xsd:attribute>
+					<xsd:attribute name="url" type="xsd:string">
+					</xsd:attribute>
+					<xsd:attribute name="username" type="xsd:string">
+					</xsd:attribute>
+					<xsd:attribute name="password" type="xsd:string">
+					</xsd:attribute>
+
+					<xsd:attribute name="handle" type="xsd:string">
+					</xsd:attribute>
+					<xsd:attribute name="connection"
+						type="xsd:string">
+					</xsd:attribute>
+					<xsd:attribute name="dataSource"
+						type="xsd:string">
+					</xsd:attribute>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+    <xsd:element name="service" >
+    <xsd:complexType>
+    	<xsd:complexContent>
+    		<xsd:extension base="beans:identifiedType">
+    			<xsd:attribute name="bean" type="xsd:string"></xsd:attribute>
+    			<xsd:attribute name="interfaces" type="xsd:string">
+    			</xsd:attribute>
+    			<xsd:attribute name="url" type="xsd:string">
+    			</xsd:attribute>
+    			<xsd:attribute name="handle" type="xsd:string"></xsd:attribute>
+    		</xsd:extension>
+    	</xsd:complexContent>
+    </xsd:complexType>
+    </xsd:element>
+    
+</xsd:schema>
