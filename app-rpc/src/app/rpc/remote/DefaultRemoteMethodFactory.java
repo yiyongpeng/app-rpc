@@ -1,9 +1,12 @@
 package app.rpc.remote;
 
 import java.lang.reflect.Method;
+
+import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
 import org.apache.log4j.Logger;
@@ -34,27 +37,26 @@ public class DefaultRemoteMethodFactory {
 	public static synchronized Class<?> proxyRemoteMethod(ClassLoader loader, Method method, Class<?> clazz) throws NotFoundException {
 		// GenProxy
 //		List<ClassClassPath> cplist = new ArrayList<ClassClassPath>();
-		ClassPool pool = getClassPool();
-		CtClass oldClass = null;
-//		try {
-			oldClass = pool.get(clazz.getName());
-//		} catch (NotFoundException e) {
-//			ClassClassPath cp = new ClassClassPath(clazz);
-//			pool.insertClassPath(cp);
-//			oldClass = pool.get(clazz.getName());
-//			pool.removeClassPath(cp);
-//			cplist.add(cp);
-//		}
-		String id = (String.valueOf(loader.hashCode())+"c"+method.getDeclaringClass().hashCode()+"m"+String.valueOf(method.hashCode())).replace("-", "_");
-		String proxyClassName = clazz.getName() + "$Proxy" + id;
-		CtClass newClass = null;
-		try{
-			clazz = loader.loadClass(proxyClassName);
-			return clazz;
-		}catch (ClassNotFoundException e) {
-		}
-		
 		try {
+			ClassPool pool = getClassPool();
+			CtClass oldClass = null;
+			try {
+				oldClass = pool.get(clazz.getName());
+			} catch (NotFoundException e) {
+				ClassClassPath cp = new ClassClassPath(clazz);
+				pool.insertClassPath(cp);
+				oldClass = pool.get(clazz.getName());
+				pool.removeClassPath(cp);
+//				cplist.add(cp);
+			}
+			String id = (Integer.toHexString(loader.hashCode()).toUpperCase()+"c"+Integer.toHexString(clazz.hashCode()).toUpperCase()+"m"+Integer.toHexString(method.toString().hashCode()).toUpperCase()).replace("-", "_");
+			String proxyClassName = clazz.getName() + "$Proxy" + id;
+			CtClass newClass = null;
+			try{
+				clazz = loader.loadClass(proxyClassName);
+				return clazz;
+			}catch (ClassNotFoundException e) {
+			}
 		newClass = pool.makeClass(proxyClassName, oldClass);
 //		cplist.add(new ClassClassPath(method.getDeclaringClass()));
 //		cplist.add(new ClassClassPath(method.getReturnType()));
@@ -97,6 +99,10 @@ public class DefaultRemoteMethodFactory {
 		return clazz;
 	}
 
+	static{
+		ClassPool.getDefault().appendClassPath(new LoaderClassPath(DefaultRemoteMethodFactory.class.getClassLoader()));
+	}
+	
 	private static ClassPool getClassPool() {
 		Object appPool = ThreadContext.contains()&&ThreadContext.contains("ClassPool")?ThreadContext.getAttribute("ClassPool"):null;
 		ClassPool pool = appPool!=null&&(appPool instanceof ClassPool)?(ClassPool)appPool:ClassPool.getDefault();

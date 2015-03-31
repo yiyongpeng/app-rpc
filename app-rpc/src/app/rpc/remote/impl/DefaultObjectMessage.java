@@ -333,7 +333,7 @@ public class DefaultObjectMessage extends AppMessage implements
 
 	}
 
-	public static boolean OPEN_RECYCLE_IN = true;
+	public static boolean OPEN_RECYCLE_IN = false;// 启用时有概率出现java.io.EOFException
 
 	private static class InnerObjectInputStream extends ObjectInputStream {
 		private InnerByteArrayInputStream _in;
@@ -349,6 +349,7 @@ public class DefaultObjectMessage extends AppMessage implements
 			super(in);
 			_in = in;
 
+			if(OPEN_RECYCLE_IN)
 			try {
 				binObj = BeanUtils.getValue(true, this, "bin");
 				Class<?> clazz = binObj.getClass();

@@ -19,6 +19,9 @@ public interface ObjectSession extends AppSession, Remote {
 	/** 网关Session */
 	String GATEWAY_SESSION = "__GATEWAY_SESSION__";
 
+	/** 是否缓存远程引用(Boolean) */
+	String SESSION_ATTR_CACHE_REMOTE = "__CACHE_REMOTE_BOOL__";
+
 	/**
 	 * 清除Remote缓存
 	 */

@@ -145,6 +145,8 @@ public class FileSystemDeployContext extends DefaultContext implements
 				destroyClassLoader();
 			}
 			classLoader = newClassLoader(urls);
+			pool = new ClassPool(true);
+			pool.insertClassPath( new LoaderClassPath(classLoader));
 			log.debug(classLoader+"  classpath: " + Arrays.toString(urls));
 		} catch (Throwable e) {
 			throw new DeployException(
@@ -652,9 +654,6 @@ public class FileSystemDeployContext extends DefaultContext implements
 			DeployClassLoader dcl = (DeployClassLoader) loader;
 			dcl.init(this);
 		}
-		pool = new ClassPool(true);
-		LoaderClassPath loaderClassPath = new LoaderClassPath(loader);
-		pool.insertClassPath(loaderClassPath);
 		return loader;
 	}
 
@@ -663,6 +662,7 @@ public class FileSystemDeployContext extends DefaultContext implements
 	}
 
 	protected void destroyClassLoader() {
+//		pool.destroy();
 		destroyClassLoader(classLoader);
 		this.classLoader = null;
 	}
