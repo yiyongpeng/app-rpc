@@ -1,8 +1,8 @@
 package app.rpc.remote.impl;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
@@ -259,10 +259,6 @@ public class DefaultObjectMessage extends AppMessage implements
 
 	/* out end */
 
-	public void reset() {
-		((InnerObjectInputStream) in)._in.reset();
-	}
-
 	private static final BlockingQueue<ObjectInput> recycle4in = new ArrayBlockingQueue<ObjectInput>(
 			CACHE_RECYCLE_MAX);
 	private static final BlockingQueue<ObjectOutput> recycle4out = new ArrayBlockingQueue<ObjectOutput>(
@@ -333,7 +329,7 @@ public class DefaultObjectMessage extends AppMessage implements
 
 	}
 
-	public static boolean OPEN_RECYCLE_IN = false;// 启用时有概率出现java.io.EOFException
+	public static boolean OPEN_RECYCLE_IN = true;// 启用时有概率出现java.io.EOFException
 
 	private static class InnerObjectInputStream extends ObjectInputStream {
 		private InnerByteArrayInputStream _in;
@@ -343,6 +339,9 @@ public class DefaultObjectMessage extends AppMessage implements
 		private Field endField;
 		private Field unreadField;
 		private Method clearMethod;
+		private Field passHandle;
+		private Field defaultDataEnd;
+		private Field blkmode;
 
 		protected InnerObjectInputStream(InnerByteArrayInputStream in)
 				throws IOException, SecurityException {
@@ -356,11 +355,17 @@ public class DefaultObjectMessage extends AppMessage implements
 				posField = clazz.getDeclaredField("pos");
 				endField = clazz.getDeclaredField("end");
 				unreadField = clazz.getDeclaredField("unread");
+				blkmode = clazz.getDeclaredField("blkmode");
+				blkmode.setAccessible(true);
 				posField.setAccessible(true);
 				endField.setAccessible(true);
 				unreadField.setAccessible(true);
 				clazz = ObjectInputStream.class;
+				passHandle = clazz.getDeclaredField("passHandle");//-1;
+				defaultDataEnd = clazz.getDeclaredField("defaultDataEnd");//false;
 				clearMethod = clazz.getDeclaredMethod("clear");
+				passHandle.setAccessible(true);
+				defaultDataEnd.setAccessible(true);
 				clearMethod.setAccessible(true);
 			} catch (Exception e) {
 				OPEN_RECYCLE_IN = false;
@@ -381,8 +386,12 @@ public class DefaultObjectMessage extends AppMessage implements
 			if (OPEN_RECYCLE_IN)
 				try {
 					posField.set(binObj, 0);
-					endField.set(binObj, 0);
+					endField.set(binObj, -1);
 					unreadField.set(binObj, 0);
+					blkmode.set(this, false);
+					
+					passHandle.set(this, -1);
+					defaultDataEnd.set(this, false);
 					clearMethod.invoke(this);
 				} catch (SecurityException e) {
 					e.printStackTrace();
@@ -434,10 +443,11 @@ public class DefaultObjectMessage extends AppMessage implements
 		
 	}
 
-	private static class InnerByteArrayInputStream extends ByteArrayInputStream {
+	private static class InnerByteArrayInputStream extends InputStream {
+		private ByteBuffer buf;
 
 		public InnerByteArrayInputStream() {
-			super(HEAD_BYTES_2_OBJECTINPUT);
+			buf = ByteBuffer.wrap(HEAD_BYTES_2_OBJECTINPUT);
 		}
 
 		public void destory() {
@@ -445,13 +455,31 @@ public class DefaultObjectMessage extends AppMessage implements
 		}
 
 		public void init(ByteBuffer msg) {
-			int p = msg.position();
-			buf = new byte[msg.remaining()];
-			msg.get(buf);
-			msg.position(p);
-			pos = 0;
-			count = buf.length;
+			buf = msg;
 		}
+
+		public int read() throws IOException {
+			if (!buf.hasRemaining()) {
+				return -1;
+			}
+			return buf.get() & 0xFF;
+		}
+		
+		public int read(byte[] bytes, int off, int len) throws IOException {
+			if (!buf.hasRemaining()) {
+				return -1;
+			}
+			
+			len = Math.min(len, buf.remaining());
+			buf.get(bytes, off, len);
+			return len;
+		}
+		
+		@Override
+		public int available() throws IOException {
+			return buf.remaining();
+		}
+		
 	}
 
 	/** table mapping primitive type names to corresponding class objects */
