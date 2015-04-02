@@ -334,14 +334,18 @@ public class DefaultObjectMessage extends AppMessage implements
 	private static class InnerObjectInputStream extends ObjectInputStream {
 		private InnerByteArrayInputStream _in;
 
+		private Method clearMethod;
+		private Field passHandle;
+		private Field defaultDataEnd;
+
 		private Object binObj;
 		private Field posField;
 		private Field endField;
 		private Field unreadField;
-		private Method clearMethod;
-		private Field passHandle;
-		private Field defaultDataEnd;
 		private Field blkmode;
+		
+		private Object bin_inObj;
+		private Field peekb;
 
 		protected InnerObjectInputStream(InnerByteArrayInputStream in)
 				throws IOException, SecurityException {
@@ -351,6 +355,7 @@ public class DefaultObjectMessage extends AppMessage implements
 			if(OPEN_RECYCLE_IN)
 			try {
 				binObj = BeanUtils.getValue(true, this, "bin");
+				bin_inObj = BeanUtils.getValue(false, binObj, "in");
 				Class<?> clazz = binObj.getClass();
 				posField = clazz.getDeclaredField("pos");
 				endField = clazz.getDeclaredField("end");
@@ -367,6 +372,11 @@ public class DefaultObjectMessage extends AppMessage implements
 				passHandle.setAccessible(true);
 				defaultDataEnd.setAccessible(true);
 				clearMethod.setAccessible(true);
+				clazz = bin_inObj.getClass();
+				peekb = clazz.getDeclaredField("peekb");
+				peekb.setAccessible(true);
+				
+				System.err.println("posField:"+posField.get(binObj)+", endField:"+endField.get(binObj)+", unreadField:"+unreadField.get(binObj)+", blkmode:"+blkmode.get(binObj)+"\n  passHandle:"+passHandle.get(this)+", defaultDataEnd:"+defaultDataEnd.get(this)+", peekb:"+peekb.get(bin_inObj));
 			} catch (Exception e) {
 				OPEN_RECYCLE_IN = false;
 				e.printStackTrace();
@@ -386,10 +396,10 @@ public class DefaultObjectMessage extends AppMessage implements
 			if (OPEN_RECYCLE_IN)
 				try {
 					posField.set(binObj, 0);
-					endField.set(binObj, -1);
+					endField.set(binObj, 0);
 					unreadField.set(binObj, 0);
-					blkmode.set(binObj, false);
-					
+					blkmode.set(binObj, true);
+					peekb.set(bin_inObj, -1);
 					passHandle.set(this, -1);
 					defaultDataEnd.set(this, false);
 					clearMethod.invoke(this);
