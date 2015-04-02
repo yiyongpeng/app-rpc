@@ -376,7 +376,7 @@ public class DefaultObjectMessage extends AppMessage implements
 				peekb = clazz.getDeclaredField("peekb");
 				peekb.setAccessible(true);
 				
-				System.err.println("posField:"+posField.get(binObj)+", endField:"+endField.get(binObj)+", unreadField:"+unreadField.get(binObj)+", blkmode:"+blkmode.get(binObj)+"\n  passHandle:"+passHandle.get(this)+", defaultDataEnd:"+defaultDataEnd.get(this)+", peekb:"+peekb.get(bin_inObj));
+//				System.err.println("posField:"+posField.get(binObj)+", endField:"+endField.get(binObj)+", unreadField:"+unreadField.get(binObj)+", blkmode:"+blkmode.get(binObj)+"\n  passHandle:"+passHandle.get(this)+", defaultDataEnd:"+defaultDataEnd.get(this)+", peekb:"+peekb.get(bin_inObj));
 			} catch (Exception e) {
 				OPEN_RECYCLE_IN = false;
 				e.printStackTrace();
