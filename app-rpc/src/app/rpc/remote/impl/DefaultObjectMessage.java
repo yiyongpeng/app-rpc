@@ -388,7 +388,7 @@ public class DefaultObjectMessage extends AppMessage implements
 					posField.set(binObj, 0);
 					endField.set(binObj, -1);
 					unreadField.set(binObj, 0);
-					blkmode.set(this, false);
+					blkmode.set(binObj, false);
 					
 					passHandle.set(this, -1);
 					defaultDataEnd.set(this, false);
