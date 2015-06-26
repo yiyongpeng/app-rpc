@@ -208,21 +208,16 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 		if (roi != null)
 			return roi.getProxy();
 
-		synchronized (cacheMap) {
-			roi = cacheMap.get(handle);
-			if (roi != null)
-				return roi.getProxy();
-			// if (isClosed())
-			// throw new AccessException("Session is closed.");
-			roi = new DefaultRemoteObject(this, handle, loader, interfaces);
-			proxy = roi.getProxy();
-			if((Boolean)getCoverAttributeOfUser(ObjectSession.SESSION_ATTR_CACHE_REMOTE, false)){
-				cacheMap.put(handle, roi);
-			}
-			// log.debug(this.getInetAddress() + " has cached remote: " +
-			// handle);
-			return proxy;
+		// if (isClosed())
+		// throw new AccessException("Session is closed.");
+		roi = new DefaultRemoteObject(this, handle, loader, interfaces);
+		proxy = roi.getProxy();
+		if((Boolean)getCoverAttributeOfUser(ObjectSession.SESSION_ATTR_CACHE_REMOTE, false)){
+			cacheMap.put(handle, roi);
 		}
+		// log.debug(this.getInetAddress() + " has cached remote: " +
+		// handle);
+		return proxy;
 	}
 
 	public DefaultRemoteObject getRemoteObject(String handle) {
