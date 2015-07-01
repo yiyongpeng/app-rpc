@@ -2,10 +2,8 @@ package app.rpc.remote;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
-import org.apache.log4j.Logger;
+import app.core.AccessException;
 
 import app.core.Remote;
 import app.net.AppServer;
@@ -22,13 +20,8 @@ import app.util.ThreadContext;
  */
 public class DefaultObjectConnector extends AppServer implements
 		ObjectConnector, Remote {
-	private Logger log = Logger.getLogger(getClass());
 	private boolean server = true;
-	private String host = "0.0.0.0";
-	private int port;
 	private Exportor exportor;
-
-	private ServerSocketChannel ssc;
 
 	static {
 		// 注册默认远程基本类型
@@ -65,14 +58,14 @@ public class DefaultObjectConnector extends AppServer implements
 
 	public DefaultObjectConnector(String host, int port) throws IOException {
 		this();
-		this.host = host;
+		this.hostname = host;
 		this.port = port;
 	}
 	
 	@Override
 	public String toString() {
 		return new StringBuilder("{").append(getServerHandler().getProtocol())
-				.append(":").append(host).append(":").append(port).append("}")
+				.append(":").append(hostname).append(":").append(port).append("}")
 				.toString();
 	}
 
@@ -103,7 +96,6 @@ public class DefaultObjectConnector extends AppServer implements
 
 	@Override
 	protected void init() {
-		InetSocketAddress addr = new InetSocketAddress(host, port);
 		boolean inited = ThreadContext.contains();
 		Object app = null;
 		try {
@@ -112,24 +104,11 @@ public class DefaultObjectConnector extends AppServer implements
 			}
 			app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP,
 					getServerHandler());
-
 			super.init();
-
-			if (exportor != null)
+			if (exportor != null) {
 				exportor.init(getServerHandler());
-			if (port > 0)
-				if (server) {
-					ssc = ServerSocketChannel.open();
-					ssc.socket().bind(addr);
-					registor(ssc);
-					log.info("Listen to " + addr);
-				} else {
-					SocketChannel sc = SocketChannel
-							.open(new InetSocketAddress(host, port));
-					this.registor(sc);
-				}
-		} catch (IOException e) {
-//			log.info("listen to " + addr + " failure!");
+			}
+		} catch (Exception e) {
 			this.notifier.fireOnError(null, e);
 		} finally {
 			if (!inited) {
@@ -146,11 +125,11 @@ public class DefaultObjectConnector extends AppServer implements
 	}
 
 	public String getHost() {
-		return host;
+		return hostname;
 	}
 
 	public void setHost(String host) {
-		this.host = host;
+		this.hostname = host;
 	}
 
 	public int getPort() {
@@ -174,16 +153,29 @@ public class DefaultObjectConnector extends AppServer implements
 	}
 
 	@Override
-	public void stop() {
-		super.stop();
-		try {
-			if (ssc != null)
-				ssc.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+	public void start() {
+		SocketChannel sc=null;
+		if (port > 0) {
+			if (!server) {
+				InetSocketAddress addr = new InetSocketAddress(hostname, port);
+				try {
+					sc = SocketChannel.open(addr);
+				} catch (IOException e) {
+					throw new AccessException(e.getMessage(), e);
+				}
+			}
+		}
+		int tmp = port;
+		if(!server){
+			port = 0;
+		}
+		super.start();
+		port = tmp;
+		if(sc!=null){
+			this.registor(sc);
 		}
 	}
-
+	
 	public Exportor getExportor() {
 		return exportor;
 	}

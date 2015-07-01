@@ -6,7 +6,6 @@ import java.io.ObjectOutput;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 import app.rpc.remote.Async;
 import app.rpc.remote.RemoteMethod;
@@ -163,20 +162,20 @@ public class DefaultRemoteMethod extends POJO implements RemoteMethod {
 			}
 		} catch(ClassCastException e){
 			e.printStackTrace();
-			System.err.println("instance: "+ro.getInstance().getClass().getClassLoader()+"  remote-method: "+this.getClass().getClassLoader());
+//			System.err.println("instance: "+ro.getInstance().getClass().getClassLoader()+"  remote-method: "+this.getClass().getClassLoader());
 			for (int i=0; i<args.length; i++) {
 				Object obj = args[i];
-				if(obj==null){
-					System.err.println(i+"  null");
-				}else{
-					System.err.println(i+"  "+obj+ "  "+getInterface(obj, method.getParameterTypes()[i])+" : "+method.getParameterTypes()[i]+"("+method.getParameterTypes()[i].getClassLoader()+")");
-				}
+//				if(obj==null){
+//					System.err.println(i+"  null");
+//				}else{
+//					System.err.println(i+"  "+obj+ "  "+getInterface(obj, method.getParameterTypes()[i])+" : "+method.getParameterTypes()[i]+"("+method.getParameterTypes()[i].getClassLoader()+")");
+//				}
 			}
 		}catch (Throwable e) {
-			System.err.println("service invoke failed!  method: " + method
-					+ "   args: " + Arrays.toString(args) + "  this-method: "
-					+ isThisMethod(ro.getInstance(), method) + "  instance: "
-					+ ro.getInstance() + "   handle: " + ro.getHandle()+"  loader: "+this.getClass().getClassLoader());
+//			System.err.println("service invoke failed!  method: " + method
+//					+ "   args: " + Arrays.toString(args) + "  this-method: "
+//					+ isThisMethod(ro.getInstance(), method) + "  instance: "
+//					+ ro.getInstance() + "   handle: " + ro.getHandle()+"  loader: "+this.getClass().getClassLoader());
 			if (async) {
 				e.printStackTrace();
 			} else {
@@ -200,26 +199,26 @@ public class DefaultRemoteMethod extends POJO implements RemoteMethod {
 		return method.invoke(instance, args);
 	}
 
-	private boolean isThisMethod(Object instance, Method method) {
-		try {
-			return method == instance.getClass().getMethod(method.getName(),
-					method.getParameterTypes());
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-			for(Method method2 : instance.getClass().getMethods()){
-				if(method2.getName().equals(method.getName())){
-					Class<?>[] types = method.getParameterTypes();
-					Class<?>[] types2 = method2.getParameterTypes();
-					for(int i=0; i<types2.length; i++){
-						System.err.println(types2[i]+"("+types2[i].getClassLoader()+") <= "+types[i]+"("+types[i].getClassLoader()+")");
-					}
-				}
-			}
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
+//	private boolean isThisMethod(Object instance, Method method) {
+//		try {
+//			return method == instance.getClass().getMethod(method.getName(),
+//					method.getParameterTypes());
+//		} catch (NoSuchMethodException e) {
+//			e.printStackTrace();
+//			for(Method method2 : instance.getClass().getMethods()){
+//				if(method2.getName().equals(method.getName())){
+//					Class<?>[] types = method.getParameterTypes();
+//					Class<?>[] types2 = method2.getParameterTypes();
+//					for(int i=0; i<types2.length; i++){
+//						System.err.println(types2[i]+"("+types2[i].getClassLoader()+") <= "+types[i]+"("+types[i].getClassLoader()+")");
+//					}
+//				}
+//			}
+//		} catch (SecurityException e) {
+//			e.printStackTrace();
+//		}
+//		return false;
+//	}
 
 	public RemoteType[] getParameterTypes() {
 		return this.paramTypes;

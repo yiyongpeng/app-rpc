@@ -31,7 +31,7 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 		if (closed) {
-			System.err.println("Object is Closed: " + session.getInetAddress()
+			System.err.println("invoke fault! Object is Closed: " + session.getInetAddress()
 					+ "  handle: " + getHandle());
 			return null;
 		}

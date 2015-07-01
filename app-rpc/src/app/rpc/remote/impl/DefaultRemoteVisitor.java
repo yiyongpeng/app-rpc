@@ -9,6 +9,8 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import app.rpc.remote.RemoteObject;
 import app.rpc.remote.RemoteVisitor;
 import app.rpc.remote.Scope;
 import app.rpc.remote.service.RegistorParameter;
+import app.util.BeanUtils;
 
 /**
  * 远程对象访问器
@@ -33,7 +36,7 @@ import app.rpc.remote.service.RegistorParameter;
  * 
  */
 public class DefaultRemoteVisitor extends BaseRemoteVisitor {
-
+	
 	@Override
 	protected Object invokeImpl(RemoteObject ro, Method method, Object[] args)
 			throws Throwable {
@@ -169,28 +172,29 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 	}
 
 	protected InnerObjectInputStream newObjectInput() {
-		try {
-			return new InnerObjectInputStream(new InnerByteArrayInputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
+		InnerObjectInputStream _in = recycle4in.poll();// null;//
+		if (_in == null){
+			try {
+				_in = new InnerObjectInputStream(new InnerByteArrayInputStream());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
-		return null;
+		return _in;
 	}
 
 	@Override
 	public void destory() {
 		if (in != null) {
 			InnerObjectInputStream _in = (InnerObjectInputStream) in;
-			_in.destory();
+			_in.close();
 			in = null;
 		}
 
 		if (out != null) {
 			InnerObjectOutputStream _out = (InnerObjectOutputStream) out;
-			_out.destory();
+			_out.close();
 			out = null;
-
-			recycle4out.offer(_out);
 		}
 
 		super.destory();
@@ -249,9 +253,12 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 
 	// -----------------------------------------
 
+	public static boolean OPEN_RECYCLE_IN = true;
 	private static final int CAPACITY_RECYCLE = 1024;
 
-	private static final BlockingQueue<ObjectOutput> recycle4out = new ArrayBlockingQueue<ObjectOutput>(
+	private static final BlockingQueue<InnerObjectInputStream> recycle4in = new ArrayBlockingQueue<InnerObjectInputStream>(
+			CAPACITY_RECYCLE);
+	private static final BlockingQueue<InnerObjectOutputStream> recycle4out = new ArrayBlockingQueue<InnerObjectOutputStream>(
 			CAPACITY_RECYCLE);
 	private static final BlockingQueue<RemoteVisitor> recycle4this = new ArrayBlockingQueue<RemoteVisitor>(
 			CAPACITY_RECYCLE);
@@ -281,6 +288,13 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			_out = out;
 		}
 
+		@Override
+		public void close() {
+			destory();
+			
+			recycle4out.offer(this);
+		}
+		
 		public void destory() {
 			try {
 				reset();
@@ -368,13 +382,92 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 
 	}
 
-	protected static class InnerObjectInputStream extends ObjectInputStream {
+	private static class InnerObjectInputStream extends ObjectInputStream {
 		private InnerByteArrayInputStream _in;
+
+		private Method clearMethod;
+		private Field passHandle;
+		private Field defaultDataEnd;
+
+		private Object binObj;
+		private Field posField;
+		private Field endField;
+		private Field unreadField;
+		private Field blkmode;
+		
+		private Object bin_inObj;
+		private Field peekb;
 
 		protected InnerObjectInputStream(InnerByteArrayInputStream in)
 				throws IOException, SecurityException {
 			super(in);
 			_in = in;
+
+			if(OPEN_RECYCLE_IN)
+			try {
+				binObj = BeanUtils.getValue(true, this, "bin");
+				bin_inObj = BeanUtils.getValue(false, binObj, "in");
+				Class<?> clazz = binObj.getClass();
+				posField = clazz.getDeclaredField("pos");
+				endField = clazz.getDeclaredField("end");
+				unreadField = clazz.getDeclaredField("unread");
+				blkmode = clazz.getDeclaredField("blkmode");
+				blkmode.setAccessible(true);
+				posField.setAccessible(true);
+				endField.setAccessible(true);
+				unreadField.setAccessible(true);
+				clazz = ObjectInputStream.class;
+				passHandle = clazz.getDeclaredField("passHandle");//-1;
+				defaultDataEnd = clazz.getDeclaredField("defaultDataEnd");//false;
+				clearMethod = clazz.getDeclaredMethod("clear");
+				passHandle.setAccessible(true);
+				defaultDataEnd.setAccessible(true);
+				clearMethod.setAccessible(true);
+				clazz = bin_inObj.getClass();
+				peekb = clazz.getDeclaredField("peekb");
+				peekb.setAccessible(true);
+				
+//				System.err.println("posField:"+posField.get(binObj)+", endField:"+endField.get(binObj)+", unreadField:"+unreadField.get(binObj)+", blkmode:"+blkmode.get(binObj)+"\n  passHandle:"+passHandle.get(this)+", defaultDataEnd:"+defaultDataEnd.get(this)+", peekb:"+peekb.get(bin_inObj));
+			} catch (Exception e) {
+				OPEN_RECYCLE_IN = false;
+				e.printStackTrace();
+			}
+		}
+
+		@Override
+		public void close() {
+			destory();
+			
+			if (OPEN_RECYCLE_IN)
+				recycle4in.offer(this);
+		}
+
+		public void destory() {
+			_in.destory();
+
+			if (OPEN_RECYCLE_IN)
+				try {
+					posField.set(binObj, 0);
+					endField.set(binObj, 0);
+					unreadField.set(binObj, 0);
+					blkmode.set(binObj, true);
+					peekb.set(bin_inObj, -1);
+					passHandle.set(this, -1);
+					defaultDataEnd.set(this, false);
+					clearMethod.invoke(this);
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				}
+		}
+
+		public void init(ByteBuffer msg) {
+			_in.init(msg);
 		}
 
 		@Override
@@ -386,28 +479,15 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 						.getContextClassLoader();
 				return Class.forName(name, false, loader);
 			} catch (ClassNotFoundException ex) {
-				Class<?> cl = primClasses.get(name);
-				if (cl != null) {
-					return cl;
+				Class<?> clazz = primClasses.get(name);
+				if (clazz != null) {
+					return clazz;
 				} else {
 					throw ex;
 				}
 			}
 		}
 
-		public void destory() {
-			try {
-				close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			_in.destory();
-		}
-
-		public void init(ByteBuffer msg) {
-			_in.setMessage(msg);
-		}
-		
 		@Override
 		public boolean markSupported() {
 			return _in.markSupported();
@@ -422,8 +502,9 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		public synchronized void reset() throws IOException {
 			_in.reset();
 		}
+		
 	}
-
+	
 	private static class InnerByteArrayInputStream extends ByteArrayInputStream {
 
 		public InnerByteArrayInputStream() {
@@ -434,7 +515,7 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			buf = null;
 		}
 
-		public void setMessage(ByteBuffer msg) {
+		public void init(ByteBuffer msg) {
 			int p = msg.position();
 			buf = new byte[msg.remaining()];
 			msg.get(buf);

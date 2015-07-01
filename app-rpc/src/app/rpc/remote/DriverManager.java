@@ -25,7 +25,7 @@ public class DriverManager {
 	private static Map<String, ObjectConnector> connectors = new ConcurrentHashMap<String, ObjectConnector>();
 	private static Map<String, ObjectConnectionFactory> connFactoryMap = new ConcurrentHashMap<String, ObjectConnectionFactory>();
 
-	public synchronized static ObjectConnector getConnector(String protocol) {
+	public synchronized static ObjectConnector getConnector(String protocol) throws IOException {
 		ObjectConnector connector = connectors.get(protocol);
 		if (connector == null) {
 			connector = createConnector(protocol);
@@ -50,7 +50,12 @@ public class DriverManager {
 			String username, String password) throws AccessException {
 		RemoteUrl url = new RemoteUrl(connString);
 		String protocol = url.getProtocol();
-		DefaultObjectConnector connector = ((DefaultObjectConnector) getConnector(protocol));
+		DefaultObjectConnector connector;
+		try {
+			connector = ((DefaultObjectConnector) getConnector(protocol));
+		} catch (IOException e) {
+			throw new AccessException("创建连接器失败！",e);
+		}
 		ObjectConnectionFactory connFactory = getConnectionFactory(protocol);// 在Connector初始化之后获取
 		if (connFactory == null)
 			throw new AccessException("未找到协议驱动程序：" + url.getProtocol());

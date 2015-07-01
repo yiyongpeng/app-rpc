@@ -38,9 +38,9 @@ public class DefaultServiceObject extends POJO implements ServiceObject {
 		this.handle = handle;
 		this.instance = instance;
 		ClassLoader loader = instance.getClass().getClassLoader();
-		if(loader==null){
-			System.err.println(instance+" , loader is null");
-		}
+//		if(loader==null){
+//			System.err.println(instance+" , loader is null");
+//		}
 		this.methods = new DefaultRemoteMethodCollection(handle, loader, toInstanceInterfaces(instance, interfaces));
 		init();
 	}
