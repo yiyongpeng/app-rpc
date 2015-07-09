@@ -430,7 +430,7 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 //				System.err.println("posField:"+posField.get(binObj)+", endField:"+endField.get(binObj)+", unreadField:"+unreadField.get(binObj)+", blkmode:"+blkmode.get(binObj)+"\n  passHandle:"+passHandle.get(this)+", defaultDataEnd:"+defaultDataEnd.get(this)+", peekb:"+peekb.get(bin_inObj));
 			} catch (Exception e) {
 				OPEN_RECYCLE_IN = false;
-				e.printStackTrace();
+				System.err.println("OPEN_RECYCLE_IN = false,  "+e);
 			}
 		}
 

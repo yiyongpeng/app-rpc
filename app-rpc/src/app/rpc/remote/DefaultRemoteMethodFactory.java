@@ -89,8 +89,8 @@ public class DefaultRemoteMethodFactory {
 //		}
 			newClass.addMethod(CtMethod.make(sb.toString(), newClass));
 			clazz = newClass.toClass(loader, null);
-		} catch (Exception e1) {
-			e1.printStackTrace();
+		} catch (Exception e) {
+			System.err.println("proxy RemoteMethod error: "+e);
 		} finally {
 //			for (ClassClassPath cp : cplist) {
 //				pool.removeClassPath(cp);

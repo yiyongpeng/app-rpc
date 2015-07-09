@@ -126,9 +126,12 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 		if (!isClosed()) {
 			updateLastTime();
 			send(PING_MSG);
+			if(log.isDebugEnabled())
 			log.debug(this + "  >> ping >>  " + getInetAddress());
+			return false;
+		}else{
+			return !isReconnect();
 		}
-		return !isReconnect();
 	}
 
 	@Override
@@ -136,6 +139,7 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 		reconnect = false;
 		reconnecting = false;
 		super.close();
+		getHandler().removeSession(getSessionId());
 	}
 
 	public String getPwd() {
