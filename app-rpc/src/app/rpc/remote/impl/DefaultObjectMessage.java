@@ -40,7 +40,9 @@ public class DefaultObjectMessage extends AppMessage implements
 	 * @throws IOException
 	 */
 	public void init() throws IOException {
-		out = newObjectOutput(this);
+		if(isValid()){
+			out = newObjectOutput(this);
+		}
 		in = newObjectInput(getByteBuffer());
 	}
 
