@@ -36,7 +36,7 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 		Remote, ObjectConnection, ObjectSession {
 	// private static final Logger log = Logger
 	// .getLogger(DefaultObjectConnection.class);
-	protected Map<Serializable, DefaultRemoteObject> cachedHandleMap;
+	protected Map<Serializable, DefaultRemoteObject> cachedHandleMap = new ConcurrentHashMap<Serializable, DefaultRemoteObject>();
 	protected RemoteVisitorFactory visitorFactory;
 
 	@Override
@@ -204,16 +204,27 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 		DefaultRemoteObject roi = null;
 		Object proxy = null;
 
-		roi = cacheMap.get(handle);
-		if (roi != null)
-			return roi.getProxy();
-
-		// if (isClosed())
-		// throw new AccessException("Session is closed.");
-		roi = new DefaultRemoteObject(this, handle, loader, interfaces);
-		proxy = roi.getProxy();
-		if((Boolean)getCoverAttributeOfUser(ObjectSession.SESSION_ATTR_CACHE_REMOTE, false)){
-			cacheMap.put(handle, roi);
+		String lockName = "__GET_REMOTE_LOCK__"+handle;
+		Object lock = null;
+		synchronized (this) {
+			lock = getAttribute(lockName);
+			if(lock==null){
+				lock = new Object();
+				setAttribute(lockName, lock);
+			}
+		}
+		synchronized (lock) {
+			roi = cacheMap.get(handle);
+			if (roi != null)
+				return roi.getProxy();
+	
+			// if (isClosed())
+			// throw new AccessException("Session is closed.");
+			roi = new DefaultRemoteObject(this, handle, loader, interfaces);
+			proxy = roi.getProxy();
+			if((Boolean)getCoverAttributeOfUser(ObjectSession.SESSION_ATTR_CACHE_REMOTE, true)){
+				cacheMap.put(handle, roi);
+			}
 		}
 		// log.debug(this.getInetAddress() + " has cached remote: " +
 		// handle);
@@ -227,12 +238,6 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 	}
 
 	private Map<Serializable, DefaultRemoteObject> getHandlesCacheMap() {
-		if (cachedHandleMap == null)
-			synchronized (this) {
-				if (cachedHandleMap == null) {
-					cachedHandleMap = new ConcurrentHashMap<Serializable, DefaultRemoteObject>();
-				}
-			}
 		return cachedHandleMap;
 	}
 

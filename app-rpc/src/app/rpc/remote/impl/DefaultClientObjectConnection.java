@@ -223,6 +223,6 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 	private String hostname;
 	private String protocol;
 
-	private boolean reconnecting = false;
-	private boolean reconnect = true;
+	private volatile boolean reconnecting = false;
+	private volatile boolean reconnect = true;
 }
