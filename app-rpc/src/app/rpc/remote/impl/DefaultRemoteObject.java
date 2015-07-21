@@ -20,6 +20,8 @@ import app.rpc.remote.RemoteVisitor;
  */
 public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 
+	private RemoteVisitor rv;
+
 	public int getInvokeHandle() {
 		return invokeHandle;
 	}
@@ -35,9 +37,7 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 					+ "  handle: " + getHandle());
 			return null;
 		}
-		RemoteVisitor rv = session.newVisitor();
 		Object value = rv.invoke(this, method, args);
-		rv.destory();
 		return value;
 	}
 
@@ -64,19 +64,22 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 
 	public void close() {
 		this.closed = true;
-
-		this.cachedMethods = null;
-		this.methods = null;
-		this.handle = null;
-
-		this.proxy = null;
-
-		this.interfaces = null;
-
-		this.session = null;
-
+		if(rv!=null){
+			rv.destory();
+			rv = null;
+		}
+		cachedMethods = null;
+		methods = null;
+		handle = null;
+		proxy = null;
+		interfaces = null;
+		session = null;
 	}
-
+	@Override
+	protected void finalize() throws Throwable {
+		close();
+		super.finalize();
+	}
 	public RemoteMethod mapping(Method method) {
 		RemoteMethod remoteMethod = cachedMethods.get(method);
 		if (remoteMethod == null) {
@@ -112,11 +115,16 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 			t.setContextClassLoader(loader);
 			changeLoader = true;
 		}
+		boolean suc = false;
 		try {
-			RemoteVisitor rv = this.session.newVisitor();
+			rv = this.session.newVisitor();
 			rv.validate(this);
-			rv.destory();
+			suc = true;
 		} finally {
+			if(suc==false){
+				rv.destory();
+				rv = null;
+			}
 			if (changeLoader) {
 				t.setContextClassLoader(cl);
 			}

@@ -102,6 +102,13 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 	public ObjectServerHandler getServerHandler() {
 		return (ObjectServerHandler) super.getServerHandler();
 	}
+	
+	@Override
+	public void destory() {
+		clearRemoteCached();
+		
+		super.destory();
+	}
 
 	/**
 	 * 只在主动关闭的时候清除缓存
@@ -146,25 +153,22 @@ public class DefaultObjectConnection extends DefaultAppSession implements
 
 	public void registor(String handle, Serializable instance,
 			Class<?>... interfaces) throws AccessException {
-		if (isClosed())
-			throw new AccessException("Session is closed.");
-		RemoteVisitor rv = newVisitor();
-		rv.registor(handle, instance, interfaces, Scope.SESSION);
-		rv.destory();
+		registor(Scope.SESSION, handle, instance, interfaces);
 	}
 
 	public void registor(Scope scope, String handle, Serializable instance,
 			Class<?>... interfaces) throws AccessException {
 		if (isClosed())
 			throw new AccessException("Session is closed.");
+		RemoteVisitor rv = newVisitor();
 		try {
-			RemoteVisitor rv = newVisitor();
 			rv.registor(handle, instance, interfaces, scope);
-			rv.destory();
 		} catch (AccessException e) {
 			throw e;
 		} catch (Exception e) {
 			throw new AccessException("registor failed.", e);
+		}finally{
+			rv.destory();
 		}
 	}
 

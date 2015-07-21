@@ -99,7 +99,6 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 		} else {
 			super.onClosed();
 			new Thread() {
-
 				@Override
 				public void run() {
 					DriverManager.notifyClosed(protocol);
@@ -107,13 +106,14 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 			}.start();
 		}
 	}
-
+	
 	public void connect() {
-		init0(protocol);
 		RemoteVisitor rv = newVisitor();
-		rv.connect(getURLString(), username, password);/* 登录验证 */
-		rv.destory();
-
+		try{
+			rv.connect(getURLString(), username, password);/* 登录验证 */
+		}finally{
+			rv.destory();
+		}
 		setAttribute(SESSION_KEPLIVE_TIMEOUT, 30000L);// 超时时间转义为ping间隔，默认30秒
 
 		log.debug("Connect-success: " + getURLString() + "  username: "
@@ -186,7 +186,7 @@ public class DefaultClientObjectConnection extends DefaultObjectConnection
 		this.username = username;
 		this.password = password;
 		this.sessionId = String.valueOf(hashCode());
-
+		
 		connect0();
 	}
 

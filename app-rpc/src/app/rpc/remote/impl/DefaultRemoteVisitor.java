@@ -43,19 +43,21 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		RemoteMethod mm = ro.mapping(method);
 		if (mm == null)
 			throw new AccessException("Unkown method: " + method);
-		InnerByteArrayOutputStream _out = ((InnerObjectOutputStream) out)._out;
-		_out.prepare(mm);
 
 		// ----------- 开始调用 -----------
-
-		// ObjectHandle oh = new ObjectHandle(ro.getHandle());
-		((InnerObjectOutputStream)out)._out.mode = (MODE_INVOKATION);
-		out.writeInt(ro.getInvokeHandle());/* 写入调用句柄 */
-		// oh.writeExternal(out);/* 写入对象句柄 */
-		// oh.destory();
-
-		return mm.invoke(in, out, ro, args);
-
+		try{
+			messageBegin(mm.isAsync());
+			InnerByteArrayOutputStream _out = ((InnerObjectOutputStream) out)._out;
+			_out.prepare(mm);
+			// ObjectHandle oh = new ObjectHandle(ro.getHandle());
+			((InnerObjectOutputStream)out)._out.mode = (MODE_INVOKATION);
+			out.writeInt(ro.getInvokeHandle());/* 写入调用句柄 */
+			// oh.writeExternal(out);/* 写入对象句柄 */
+			// oh.destory();
+			return mm.invoke(in, out, ro, args);
+		}finally{
+			messageEnd();
+		}
 	}
 
 	@Override
@@ -63,6 +65,9 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			Class<?>[] interfaces) throws AccessException {
 		try {
 			ObjectHandle oh = new ObjectHandle(handle);
+
+			messageBegin();
+			
 			// 请求远程对象方法列表
 			((InnerObjectOutputStream)out)._out.mode = (MODE_VALIDATE);
 			oh.writeExternal(out); /* 写入对象句柄 */
@@ -85,16 +90,20 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		} catch (AccessException e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new AccessException("validate failed.", e);
+			throw new AccessException("validate failed: "+e.getMessage(), e);
+		}finally{
+			messageEnd();
 		}
 	}
 
 	@Override
 	public void registorImpl(String handle, Serializable instance,
 			Class<?>[] interfaces, Scope scope) {
-		RegistorParameter rp = new RegistorParameter(handle, instance,
-				interfaces, scope);
 		try {
+			RegistorParameter rp = new RegistorParameter(handle, instance,
+					interfaces, scope);
+			
+			messageBegin();
 			((InnerObjectOutputStream)out)._out.mode = (MODE_REGISTOR);
 			rp.writeExternal(out);
 			rp.destory();
@@ -102,8 +111,10 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 
 			if (in.readBoolean() == false)
 				throw new AccessException(in.readUTF());
-		} catch (Throwable e) {
-			throw new AccessException("registor failed!", e);
+		} catch (IOException e) {
+			throw new AccessException("registor failed: "+e.getMessage(), e);
+		}finally{
+			messageEnd();
 		}
 	}
 
@@ -118,6 +129,8 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			DefaultClientObjectConnection conn = (DefaultClientObjectConnection) session;
 			String sessionId = conn.getSessionId();
 
+			messageBegin();
+			
 			((InnerObjectOutputStream)out)._out.mode = (MODE_LOGIN);
 			out.writeUTF(url);
 			out.writeUTF(user);
@@ -143,6 +156,8 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		} catch (Throwable e) {
 			throw new AccessException("connect failed!  url=" + url
 					+ "  username=" + user + "  password=" + pwd, e);
+		} finally {
+			messageEnd();
 		}
 	}
 
@@ -185,6 +200,12 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 
 	@Override
 	public void destory() {
+		super.destory();
+
+		recycle4this.offer(this);
+	}
+
+	private void messageEnd() {
 		if (in != null) {
 			InnerObjectInputStream _in = (InnerObjectInputStream) in;
 			_in.close();
@@ -196,18 +217,19 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			_out.close();
 			out = null;
 		}
-
-		super.destory();
-
-		recycle4this.offer(this);
 	}
 
-	@Override
-	public void init(AppSession session) {
-		super.init(session);
-		InnerObjectInputStream in = newObjectInput();
-		this.in = in;
-		this.out = newObjectOutput(in);
+	private void messageBegin() {
+		messageBegin(false);
+	}
+	private void messageBegin(boolean async) {
+		if(async){
+			this.out = newObjectOutput(null);
+		}else{
+			InnerObjectInputStream in = newObjectInput();
+			this.in = in;
+			this.out = newObjectOutput(in);
+		}
 	}
 
 	public static RemoteVisitor allocate(AppSession session) {

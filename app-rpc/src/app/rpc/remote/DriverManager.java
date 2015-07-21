@@ -131,8 +131,8 @@ public class DriverManager {
 		ObjectConnector connector = connectors.get(protocol);
 		if (connector != null
 				&& connector.getServerHandler().getConnections().size() == 0) {
-			connector.stop();
 			connectors.remove(protocol);
+			connector.stop();
 		}
 	}
 

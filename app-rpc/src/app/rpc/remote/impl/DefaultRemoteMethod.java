@@ -163,14 +163,14 @@ public class DefaultRemoteMethod extends POJO implements RemoteMethod {
 		} catch(ClassCastException e){
 			e.printStackTrace();
 //			System.err.println("instance: "+ro.getInstance().getClass().getClassLoader()+"  remote-method: "+this.getClass().getClassLoader());
-			for (int i=0; i<args.length; i++) {
-				Object obj = args[i];
+//			for (int i=0; i<args.length; i++) {
+//				Object obj = args[i];
 //				if(obj==null){
 //					System.err.println(i+"  null");
 //				}else{
 //					System.err.println(i+"  "+obj+ "  "+getInterface(obj, method.getParameterTypes()[i])+" : "+method.getParameterTypes()[i]+"("+method.getParameterTypes()[i].getClassLoader()+")");
 //				}
-			}
+//			}
 		}catch (Throwable e) {
 //			System.err.println("service invoke failed!  method: " + method
 //					+ "   args: " + Arrays.toString(args) + "  this-method: "
@@ -187,13 +187,13 @@ public class DefaultRemoteMethod extends POJO implements RemoteMethod {
 		return null;
 	}
 
-	private String getInterface(Object obj, Class<?> interfaze) {
-		for (Class<?> clazz : obj.getClass().getInterfaces())
-			if(clazz.getName().equals(interfaze.getName())) {
-				return clazz+"("+clazz.getClassLoader()+")";
-			}
-		return "unkwon";
-	}
+//	private String getInterface(Object obj, Class<?> interfaze) {
+//		for (Class<?> clazz : obj.getClass().getInterfaces())
+//			if(clazz.getName().equals(interfaze.getName())) {
+//				return clazz+"("+clazz.getClassLoader()+")";
+//			}
+//		return "unkwon";
+//	}
 
 	protected Object invoke(Object instance, Object[] args) throws Throwable {
 		return method.invoke(instance, args);
