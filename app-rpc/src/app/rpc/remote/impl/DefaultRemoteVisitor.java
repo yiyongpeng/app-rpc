@@ -45,8 +45,15 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			throw new AccessException("Unkown method: " + method);
 
 		// ----------- 开始调用 -----------
+		InnerObjectInputStream in = null;
+		ObjectOutput out = null;
 		try{
-			messageBegin(mm.isAsync());
+			if(mm.isAsync()){
+				out = newObjectOutput(null);
+			}else{
+				in = newObjectInput();
+				out = newObjectOutput(in);
+			}
 			InnerByteArrayOutputStream _out = ((InnerObjectOutputStream) out)._out;
 			_out.prepare(mm);
 			// ObjectHandle oh = new ObjectHandle(ro.getHandle());
@@ -56,18 +63,20 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			// oh.destory();
 			return mm.invoke(in, out, ro, args);
 		}finally{
-			messageEnd();
+			free(in,out);
 		}
 	}
 
 	@Override
 	protected RemoteMethodCollection validateImpl(String handle,
 			Class<?>[] interfaces) throws AccessException {
+		InnerObjectInputStream in = null;
+		ObjectOutput out = null;
 		try {
-			ObjectHandle oh = new ObjectHandle(handle);
-
-			messageBegin();
+			in = newObjectInput();
+			out = newObjectOutput(in);
 			
+			ObjectHandle oh = new ObjectHandle(handle);
 			// 请求远程对象方法列表
 			((InnerObjectOutputStream)out)._out.mode = (MODE_VALIDATE);
 			oh.writeExternal(out); /* 写入对象句柄 */
@@ -92,18 +101,22 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		} catch (Throwable e) {
 			throw new AccessException("validate failed: "+e.getMessage(), e);
 		}finally{
-			messageEnd();
+			free(in,out);
 		}
 	}
 
 	@Override
 	public void registorImpl(String handle, Serializable instance,
 			Class<?>[] interfaces, Scope scope) {
+		InnerObjectInputStream in = null;
+		ObjectOutput out = null;
 		try {
+			in = newObjectInput();
+			out = newObjectOutput(in);
+			
 			RegistorParameter rp = new RegistorParameter(handle, instance,
 					interfaces, scope);
 			
-			messageBegin();
 			((InnerObjectOutputStream)out)._out.mode = (MODE_REGISTOR);
 			rp.writeExternal(out);
 			rp.destory();
@@ -114,23 +127,26 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		} catch (IOException e) {
 			throw new AccessException("registor failed: "+e.getMessage(), e);
 		}finally{
-			messageEnd();
+			free(in,out);
 		}
 	}
 
 	@Override
 	public void connectImpl(String url, String user, String pwd) {
+		if (user == null)
+			user = "";
+		if (pwd == null)
+			pwd = "";
+		
+		InnerObjectInputStream in = null;
+		ObjectOutput out = null;
 		try {
-			if (user == null)
-				user = "";
-			if (pwd == null)
-				pwd = "";
-
+			in = newObjectInput();
+			out = newObjectOutput(in);
+			
 			DefaultClientObjectConnection conn = (DefaultClientObjectConnection) session;
 			String sessionId = conn.getSessionId();
 
-			messageBegin();
-			
 			((InnerObjectOutputStream)out)._out.mode = (MODE_LOGIN);
 			out.writeUTF(url);
 			out.writeUTF(user);
@@ -157,7 +173,7 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			throw new AccessException("connect failed!  url=" + url
 					+ "  username=" + user + "  password=" + pwd, e);
 		} finally {
-			messageEnd();
+			free(in,out);
 		}
 	}
 
@@ -205,30 +221,20 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		recycle4this.offer(this);
 	}
 
-	private void messageEnd() {
+	private void free(ObjectInput in, ObjectOutput out) {
 		if (in != null) {
-			InnerObjectInputStream _in = (InnerObjectInputStream) in;
-			_in.close();
-			in = null;
+			try {
+				in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-
 		if (out != null) {
-			InnerObjectOutputStream _out = (InnerObjectOutputStream) out;
-			_out.close();
-			out = null;
-		}
-	}
-
-	private void messageBegin() {
-		messageBegin(false);
-	}
-	private void messageBegin(boolean async) {
-		if(async){
-			this.out = newObjectOutput(null);
-		}else{
-			InnerObjectInputStream in = newObjectInput();
-			this.in = in;
-			this.out = newObjectOutput(in);
+			try {
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -253,9 +259,6 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 
 	private DefaultRemoteVisitor() {
 	}
-
-	protected ObjectInput in;
-	protected ObjectOutput out;
 
 	// ------------------------------------------
 
