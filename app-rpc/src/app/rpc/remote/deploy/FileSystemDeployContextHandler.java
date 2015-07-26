@@ -17,7 +17,7 @@ public class FileSystemDeployContextHandler extends
 	protected ObjectServerHandler serverHandler;
 	protected SessionFactory sessionFactory;
 	
-	protected String deployPath = "deploy";
+	protected String deployPath = "../deploy";
 	protected DeployContextFactory contextFactory;
 
 	@Override
@@ -76,7 +76,7 @@ public class FileSystemDeployContextHandler extends
 
 		contextFactory = new FileSystemDeployContextFactory();
 		deployPath = (String) serverHandler.getAttribute(
-				DeployHandler.APP_ATTR_DEPLOY_PATH, System.getProperty("deployPath", "deploy"));
+				DeployHandler.APP_ATTR_DEPLOY_PATH, System.getProperty("deployPath", deployPath));
 
 		super.init(serverHandler);
 	}
