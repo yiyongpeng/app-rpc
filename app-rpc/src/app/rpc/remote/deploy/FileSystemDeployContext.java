@@ -31,10 +31,8 @@ import app.rpc.remote.impl.DefaultServiceObject;
 import app.util.ThreadContext;
 import app.rpc.utils.ConfigUtils;
 
-public class FileSystemDeployContext extends DefaultContext implements
-		DeployContext {
-	private static final Logger log = Logger
-			.getLogger(FileSystemDeployContext.class);
+public class FileSystemDeployContext extends DefaultContext implements DeployContext {
+	private static final Logger log = Logger.getLogger(FileSystemDeployContext.class);
 
 	private static final long DEPLOY_SPARE_TIME = 5000;
 
@@ -46,33 +44,28 @@ public class FileSystemDeployContext extends DefaultContext implements
 	private Properties props;
 	private ClassLoader classLoader;
 	private ClassPool pool;
-	
+
 	private IConfigHandler redeployUndeployHandler = new IConfigHandler() {
 
-		public void handle(String name, String className, String handle,
-				String interfaces, Properties props0) throws Exception {
+		public void handle(String name, String className, String handle, String interfaces, Properties props0) throws Exception {
 			// log.debug("redeploy scan:" + name);
 
-			if (props.containsKey(name+".interfaces") == false) {
+			if (props.containsKey(name + ".interfaces") == false) {
 				// 已删除的，取消部署
-				log.info("redeploy removed: " + name + "  handle:" + handle
-						+ "  interfaces:" + interfaces);
+				log.info("redeploy removed: " + name + "  handle:" + handle + "  interfaces:" + interfaces);
 				if (status == STATUS_DEPLOY) {
-					ServiceObject so = (ServiceObject) removeAttribute(DefaultRemoteMethodCollection
-							.mappingInvokeHandle(handle));
+					ServiceObject so = (ServiceObject) removeAttribute(DefaultRemoteMethodCollection.mappingInvokeHandle(handle));
 					if (so != null) {
 						handleUndeployInstance(so);
 						so.destroy();
 					}
 				}
-			} else{ 
+			} else {
 				// 更换handle，取消部署
 				String handle0 = props.getProperty(name + ".handle", name).trim();
-				if (handle0.equals(handle)==false) {
-					log.info("redeploy change-handle: " + name + "  handle:"
-							+ handle + " -> " + handle0);
-					ServiceObject so = (ServiceObject) removeAttribute(DefaultRemoteMethodCollection
-							.mappingInvokeHandle(handle));
+				if (handle0.equals(handle) == false) {
+					log.info("redeploy change-handle: " + name + "  handle:" + handle + " -> " + handle0);
+					ServiceObject so = (ServiceObject) removeAttribute(DefaultRemoteMethodCollection.mappingInvokeHandle(handle));
 					if (so != null) {
 						if (status == STATUS_DEPLOY) {
 							handleUndeployInstance(so);
@@ -91,15 +84,14 @@ public class FileSystemDeployContext extends DefaultContext implements
 	public FileSystemDeployContext(File path) {
 		this.host = path.getParentFile().getName();
 		this.pathFile = path;
-		this.deployFile = new File(path,
-				FileSystemDeployContextHandler.DEPLOY_CONFIG_FILE_PATH);
+		this.deployFile = new File(path, FileSystemDeployContextHandler.DEPLOY_CONFIG_FILE_PATH);
 		loadConfig();
 	}
 
 	public String getHost() {
 		return host;
 	}
-	
+
 	private void loadConfig() {
 		lastDeployTime = deployFile.lastModified();
 		props = new Properties();
@@ -146,12 +138,10 @@ public class FileSystemDeployContext extends DefaultContext implements
 			}
 			classLoader = newClassLoader(urls);
 			pool = new ClassPool(true);
-			pool.insertClassPath( new LoaderClassPath(classLoader));
-			log.debug(classLoader+"  classpath: " + Arrays.toString(urls));
+			pool.insertClassPath(new LoaderClassPath(classLoader));
+			log.debug(classLoader + "  classpath: " + Arrays.toString(urls));
 		} catch (Throwable e) {
-			throw new DeployException(
-					"Create the deployment of the class loader failure.  deploy:"
-							+ pathFile, e);
+			throw new DeployException("Create the deployment of the class loader failure.  deploy:" + pathFile, e);
 		}
 
 		// 实例化
@@ -166,50 +156,43 @@ public class FileSystemDeployContext extends DefaultContext implements
 			if (!inited) {
 				ThreadContext.init();
 			}
-			app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP,
-					handler.getServerHandler());
+			app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP, handler.getServerHandler());
 			ThreadContext.setAttribute(ATTR_DEPLOY_CONTEXT, this);
 			ThreadContext.setAttribute("ClassPool", pool);
 			// load set
-			if(props.containsKey("creator-class"))
-			try {
-				Class<IBeanCreator> creatorClass = (Class<IBeanCreator>) classLoader.loadClass(props.getProperty("creator-class"));
-				IBeanCreator creator= creatorClass.getConstructor(DeployContext.class).newInstance(this);
-				creatorOld = (IBeanCreator) setAttribute(ATTR_BEAN_CREATOR, creator);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
-			} catch (NoSuchMethodException e) {
-				e.printStackTrace();
-			} catch (SecurityException e) {
-				e.printStackTrace();
-			}
+			if (props.containsKey("creator-class"))
+				try {
+					Class<IBeanCreator> creatorClass = (Class<IBeanCreator>) classLoader.loadClass(props.getProperty("creator-class"));
+					IBeanCreator creator = creatorClass.getConstructor(DeployContext.class).newInstance(this);
+					creatorOld = (IBeanCreator) setAttribute(ATTR_BEAN_CREATOR, creator);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (NoSuchMethodException e) {
+					e.printStackTrace();
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				}
 			final List<ServiceObject> replaces = new ArrayList<ServiceObject>();
 			final List<ServiceObject> newsolist = new ArrayList<ServiceObject>();
 			// load instance
 			handleDeployConfigAll(new IConfigHandler() {
-				public void handle(String name, String className,
-						String handle, String interfaces, Properties props)
-						throws Exception {
+				public void handle(String name, String className, String handle, String interfaces, Properties props) throws Exception {
 					Object instance = createObject(className);
-					Class<?>[] proxyInterfaces = ConfigUtils
-							.parseInterfaces(interfaces,classLoader);
+					Class<?>[] proxyInterfaces = ConfigUtils.parseInterfaces(interfaces, classLoader);
 
-					DefaultServiceObject so = new DefaultServiceObject(handle,
-							instance, proxyInterfaces);
+					DefaultServiceObject so = new DefaultServiceObject(handle, instance, proxyInterfaces);
 
-					log.info("Loaded instance: " + name + "  handle:" + handle
-							+ "  interfaces:" + interfaces + "  (" + className
-							+ ")");
+					log.info("Loaded instance: " + name + "  handle:" + handle + "  interfaces:" + interfaces + "  (" + className + ")");
 					newsolist.add(so);
-					
+
 					Object redeploy = removeAttribute(so.getInvokeHandle());
 					if (redeploy != null && redeploy instanceof ServiceObject) {
 						ServiceObject so0 = (ServiceObject) redeploy;
@@ -219,14 +202,14 @@ public class FileSystemDeployContext extends DefaultContext implements
 			});
 			// reverse destroy
 			Collections.reverse(replaces);
-			for (ServiceObject so : replaces) 
-				try{
-					log.debug("Undeploy for reload: "+so.getHandle()+"  ->  "+so.getInstance());
+			for (ServiceObject so : replaces)
+				try {
+					log.debug("Undeploy for reload: " + so.getHandle() + "  ->  " + so.getInstance());
 					if (status == STATUS_DEPLOY) {
 						handleUndeployInstance(so);
 					}
 					so.destroy();
-				}catch(Throwable e){
+				} catch (Throwable e) {
 					e.printStackTrace();
 				}
 			// deploy up
@@ -240,14 +223,14 @@ public class FileSystemDeployContext extends DefaultContext implements
 				status = STATUS_LOAD;
 		} finally {
 			thread.setContextClassLoader(loader);
-			
-			if(creatorOld!=null)
-				try{
+
+			if (creatorOld != null)
+				try {
 					creatorOld.destroy();
-				}catch (Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			
+
 			ThreadContext.removeAttribute(ATTR_DEPLOY_CONTEXT);
 			ThreadContext.removeAttribute("ClassPool");
 			if (!inited) {
@@ -260,7 +243,7 @@ public class FileSystemDeployContext extends DefaultContext implements
 
 	protected Object createObject(String className) {
 		try {
-			if(!contains(ATTR_BEAN_CREATOR)){
+			if (!contains(ATTR_BEAN_CREATOR)) {
 				IBeanCreator creator = new DefaultBeanCreator(this);
 				setAttribute(ATTR_BEAN_CREATOR, creator);
 			}
@@ -269,9 +252,9 @@ public class FileSystemDeployContext extends DefaultContext implements
 		} catch (Exception e) {
 			throw new AccessException("Unable instantion: " + className, e);
 		}
-		
+
 	}
-	
+
 	private URL[] getClassPathUrls() throws IOException {
 		File libDirFile = new File(pathFile, "lib/");
 //		if (libDirFile.exists() == false)
@@ -284,9 +267,9 @@ public class FileSystemDeployContext extends DefaultContext implements
 		File libDirCacheFile = new File(cacheFile, "lib/");
 		if (libDirCacheFile.exists())
 			FileUtils.deleteDirectory(libDirCacheFile);
-		
-		if(libDirFile.exists())
-		FileUtils.copyDirectory(libDirFile, libDirCacheFile);
+
+		if (libDirFile.exists())
+			FileUtils.copyDirectory(libDirFile, libDirCacheFile);
 
 		List<URL> urls = new ArrayList<URL>();
 
@@ -321,26 +304,26 @@ public class FileSystemDeployContext extends DefaultContext implements
 
 	public static interface IConfigHandler {
 
-		void handle(String name, String className, String handle,
-				String interfaces, Properties props) throws Exception;
+		void handle(String name, String className, String handle, String interfaces, Properties props) throws Exception;
 
 	}
 
 	private void handleDeployConfigAll(IConfigHandler handler) {
 		handleDeployConfigAll(props, false, handler);
 	}
-	
+
 	private void handleDeployConfigAll(boolean reverse, IConfigHandler handler) {
 		handleDeployConfigAll(props, reverse, handler);
 	}
 
-	private static void handleDeployConfigAll(Properties props, boolean reverse,
-			IConfigHandler handler) {
+	private static void handleDeployConfigAll(Properties props, boolean reverse, IConfigHandler handler) {
 		String export = props.getProperty("export", "");
 		List<String> arr = new ArrayList<String>();
-		for (String name : export.split(","))arr.add(name);
-		if(reverse)Collections.reverse(arr);
-		
+		for (String name : export.split(","))
+			arr.add(name);
+		if (reverse)
+			Collections.reverse(arr);
+
 		for (String name : arr)
 			try {
 				name = name.trim();
@@ -351,8 +334,7 @@ public class FileSystemDeployContext extends DefaultContext implements
 					className = className.trim();
 					handle = handle.trim();
 					interfaces = interfaces.trim();
-					handler.handle(name, className, handle, interfaces,
-							props);
+					handler.handle(name, className, handle, interfaces, props);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -372,18 +354,17 @@ public class FileSystemDeployContext extends DefaultContext implements
 		Thread t = Thread.currentThread();
 		ClassLoader cl = t.getContextClassLoader();
 		boolean inited = ThreadContext.contains();
-		if(inited==false){
+		if (inited == false) {
 			ThreadContext.init();
 		}
-		try{
+		try {
 			ThreadContext.setAttribute(ATTR_DEPLOY_CONTEXT, this);
 			ThreadContext.setAttribute("ClassPool", pool);
 			t.setContextClassLoader(getClassLoader());
-			
+
 			handleDeployConfigAll(new IConfigHandler() {
 				@Override
-				public void handle(String name, String className, String handle,
-						String interfaces, Properties props) throws Exception {
+				public void handle(String name, String className, String handle, String interfaces, Properties props) throws Exception {
 					int ih = DefaultRemoteMethodCollection.mappingInvokeHandle(handle);
 					Object obj = getAttribute(ih);
 					if (obj != null && obj instanceof ServiceObject) {
@@ -392,12 +373,12 @@ public class FileSystemDeployContext extends DefaultContext implements
 					}
 				}
 			});
-			
-		}finally{
+
+		} finally {
 			t.setContextClassLoader(cl);
 			ThreadContext.removeAttribute(ATTR_DEPLOY_CONTEXT);
 			ThreadContext.removeAttribute("ClassPool");
-			if(inited==false){
+			if (inited == false) {
 				ThreadContext.destory();
 			}
 		}
@@ -407,9 +388,9 @@ public class FileSystemDeployContext extends DefaultContext implements
 
 	private void handleDeployInstance(ServiceObject so) {
 		Object instance = so.getInstance();
-		
+
 		log.debug("handle deploy Instance: " + instance);
-		
+
 		if (instance instanceof Deployable)
 			try {
 				((Deployable) instance).onDeploy(this, so);
@@ -419,25 +400,26 @@ public class FileSystemDeployContext extends DefaultContext implements
 	}
 
 	public void onMonitoring(DeployHandler handler, String host) {
-		if (Boolean.parseBoolean(props.getProperty("auto.undeploy", "true"))
-				&& deployFile.exists() == false) {
-			if (status == STATUS_DEPLOY) {
-				onUndeploy(handler);// 取消部署
-			} else if (status == STATUS_LOAD) {
-				onDestroy(handler, host);
+		if (deployFile.exists() == false) {
+			if (Boolean.parseBoolean(props.getProperty("auto.undeploy", "true"))) {
+				if (status == STATUS_DEPLOY) {
+					onUndeploy(handler);// 取消部署
+				} else if (status == STATUS_LOAD) {
+					onDestroy(handler, host);
+				}
 			}
 		} else if (status == STATUS_DEPLOY) {
 			long lastTime = deployFile.lastModified();
 			if (lastTime > lastDeployTime + DEPLOY_SPARE_TIME) {
-				onRedeploy(handler);
+				onRedeploy(handler, host);
 			}
 		}
 	}
 
 	public void onDestroy(DeployHandler contextHandler, String host) {
-
-		doDestroy(contextHandler, host);
-
+		if (status == STATUS_LOAD) {
+			doDestroy(contextHandler, host);
+		}
 	}
 
 	public void doDestroy(DeployHandler handler, String host) {
@@ -453,8 +435,7 @@ public class FileSystemDeployContext extends DefaultContext implements
 			if (!inited) {
 				ThreadContext.init();
 			}
-			app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP,
-					handler.getServerHandler());
+			app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP, handler.getServerHandler());
 
 			doDestroy();
 
@@ -471,18 +452,29 @@ public class FileSystemDeployContext extends DefaultContext implements
 		return AbstractDeployContextHandler.getContextKey(pathFile.getName());
 	}
 
-	protected void onRedeploy(DeployHandler handler) {
+	protected void onRedeploy(DeployHandler handler, String host) {
 		if (status >= STATUS_LOAD) {
 			if (!Boolean.parseBoolean(props.getProperty("auto.reload", "true"))) {
 				return;
 			}
-			log.info("Redeploy: " + pathFile + "  prev-deploy-date:"
-					+ new Date(lastDeployTime) + "    start...");
+			log.info("Redeploy: " + pathFile + "  prev-deploy-date:" + new Date(lastDeployTime) + "    start...");
 
+			if(!Boolean.parseBoolean(props.getProperty("auto.reload.cover", "false"))){
+				onUndeploy(handler);
+				onDestroy(handler, host);
+				
+				handler.putDeployContext(host, getContextKey(), this);
+				
+				onLoad(handler);
+				onDeploy(handler);
+				log.info("Redeploy: " + pathFile + "  modified-date:" + new Date(deployFile.lastModified()) + "    finished!");
+				return;
+			}
+			
 			Properties oldprops = this.props;
-
 			ClassLoader oldloader = classLoader;
-			classLoader=null;
+			classLoader = null;
+			
 			onLoad(handler);
 
 			boolean inited = ThreadContext.contains();
@@ -491,25 +483,21 @@ public class FileSystemDeployContext extends DefaultContext implements
 				if (!inited) {
 					ThreadContext.init();
 				}
-				app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP,
-						handler.getServerHandler());
+				app = ThreadContext.setAttribute(ThreadContext.SCOPE_APP, handler.getServerHandler());
 
 				// 取消部署已不存在的对象
 				handleDeployConfigAll(oldprops, true, redeployUndeployHandler);
 			} finally {
-				
+
 				destroyClassLoader(oldloader);
-				
+
 				if (!inited) {
 					ThreadContext.destory();
 				} else {
 					ThreadContext.setAttribute(ThreadContext.SCOPE_APP, app);
 				}
 			}
-			// onDeploy(handler);
-
-			log.info("Redeploy: " + pathFile + "  deploy-date:"
-					+ new Date(lastDeployTime) + "   finished.");
+			log.info("Redeploy: " + pathFile + "  deploy-date:" + new Date(lastDeployTime) + "   finished.");
 		}
 
 	}
@@ -532,12 +520,11 @@ public class FileSystemDeployContext extends DefaultContext implements
 
 		handleDeployConfigAll(true, new IConfigHandler() {
 			@Override
-			public void handle(String name, String className, String handle,
-					String interfaces, Properties props) throws Exception {
+			public void handle(String name, String className, String handle, String interfaces, Properties props) throws Exception {
 				doUndeploy(handle);
 			}
 		});
-		
+
 		log.info("Deploy  undeploy: " + pathFile + "    finished.");
 	}
 
@@ -547,8 +534,7 @@ public class FileSystemDeployContext extends DefaultContext implements
 		if (obj != null && obj instanceof ServiceObject) {
 			ServiceObject so = (ServiceObject) obj;
 
-			log.info("undeploy instance,   handle: " + handle
-					+ "  service-object:" + so);
+			log.info("undeploy instance,   handle: " + handle + "  service-object:" + so);
 
 			handleUndeployInstance(so);
 		}
@@ -564,47 +550,34 @@ public class FileSystemDeployContext extends DefaultContext implements
 
 	public void doDestroy() {
 		log.info("Deploy destroy:  " + pathFile);
-		
+
 		handleDeployConfigAll(true, new IConfigHandler() {
 			@Override
-			public void handle(String name, String className, String handle,
-					String interfaces, Properties props) throws Exception {
+			public void handle(String name, String className, String handle, String interfaces, Properties props) throws Exception {
 				int ih = DefaultRemoteMethodCollection.mappingInvokeHandle(handle);
 				ServiceObject so = (ServiceObject) removeAttribute(ih);
-				if(so==null){
-					log.error("Not found SO : "+handle+"("+ih+")");
+				if (so == null) {
+					log.error("Not found SO : " + handle + "(" + ih + ")");
 					return;
 				}
 				so.destroy();
 			}
 		});
-		
+
 		destroyBeanCreator();
-		
+
 		clear();
-		
-		// try {
-		// if (this.classLoader != null)
-		// this.classLoader.close();
-		// } catch (Throwable e) {
-		// }
-		if (props != null)
-			this.props.clear();
 
 		destroyClassLoader();
-
 		this.pool = null;
-		this.props = null;
-		this.deployFile = null;
-		this.pathFile = null;
 	}
 
 	protected void destroyBeanCreator() {
 		IBeanCreator creatorOld = (IBeanCreator) removeAttribute(ATTR_BEAN_CREATOR);
-		if(creatorOld!=null)
-			try{
+		if (creatorOld != null)
+			try {
 				creatorOld.destroy();
-			}catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 	}
@@ -637,9 +610,8 @@ public class FileSystemDeployContext extends DefaultContext implements
 		ClassLoader loader = null;
 		if (classStr != null) {
 			try {
-				log.info("Custm class-loader: " + classStr + "  deploy: "
-						+ getName());
-				
+				log.info("Custm class-loader: " + classStr + "  deploy: " + getName());
+
 				clazz = Thread.currentThread().getContextClassLoader().loadClass(classStr);
 				Constructor<?> cons = clazz.getConstructor(URL[].class);
 				loader = (ClassLoader) cons.newInstance(new Object[] { urls });
@@ -647,8 +619,8 @@ public class FileSystemDeployContext extends DefaultContext implements
 				e.printStackTrace();
 			}
 		}
-		if(loader==null){
-			loader =  new DefaultDeployClassLoader(urls);
+		if (loader == null) {
+			loader = new DefaultDeployClassLoader(urls);
 		}
 		if (loader instanceof DeployClassLoader) {
 			DeployClassLoader dcl = (DeployClassLoader) loader;
@@ -662,7 +634,6 @@ public class FileSystemDeployContext extends DefaultContext implements
 	}
 
 	protected void destroyClassLoader() {
-//		pool.destroy();
 		destroyClassLoader(classLoader);
 		this.classLoader = null;
 	}
@@ -677,11 +648,11 @@ public class FileSystemDeployContext extends DefaultContext implements
 	public ClassPool getClassPool() {
 		return this.pool;
 	}
-	
+
 	public DeployHandler getHandler() {
 		return handler;
 	}
-	
+
 	public String getPath() {
 		return pathFile.getPath();
 	}
@@ -701,10 +672,10 @@ public class FileSystemDeployContext extends DefaultContext implements
 	public ClassLoader getClassLoader() {
 		return classLoader;
 	}
-	
+
 	@Override
 	public int compareTo(DeployContext o) {
-		return getStartupPriority()-o.getStartupPriority();
+		return getStartupPriority() - o.getStartupPriority();
 	}
 
 	public int getStartupPriority() {

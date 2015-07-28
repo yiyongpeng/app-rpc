@@ -6,7 +6,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 import app.rpc.remote.ObjectConnection;
 import app.rpc.utils.ConfigUtils;
 
-@SuppressWarnings("rawtypes")
 public abstract class AbstractRemoteFactoryBean extends AbstractFactoryBean {
 
 	@Override

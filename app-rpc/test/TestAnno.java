@@ -1,17 +1,9 @@
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import simple.HelloImpl2;
-
-import javassist.bytecode.ByteArray;
-
 import app.rpc.remote.Value;
-
 
 public class TestAnno {
 

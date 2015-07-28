@@ -6,7 +6,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 import app.rpc.remote.DriverManager;
 import app.rpc.remote.ObjectConnection;
 
-@SuppressWarnings("rawtypes")
 public class ObjectConnectionFactoryBean extends AbstractFactoryBean {
 	private static final Logger log = Logger
 			.getLogger(ObjectConnectionFactoryBean.class);
