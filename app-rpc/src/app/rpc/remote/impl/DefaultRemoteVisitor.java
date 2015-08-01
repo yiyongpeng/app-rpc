@@ -99,7 +99,7 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 		} catch (AccessException e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new AccessException("validate failed: "+e.getMessage(), e);
+			throw new AccessException("validate failed: "+handle, e);
 		}finally{
 			free(in,out);
 		}
@@ -125,7 +125,7 @@ public class DefaultRemoteVisitor extends BaseRemoteVisitor {
 			if (in.readBoolean() == false)
 				throw new AccessException(in.readUTF());
 		} catch (IOException e) {
-			throw new AccessException("registor failed: "+e.getMessage(), e);
+			throw new AccessException("registor remote failed: "+handle, e);
 		}finally{
 			free(in,out);
 		}

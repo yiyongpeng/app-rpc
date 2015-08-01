@@ -46,8 +46,7 @@ public class DefaultRemoteDeployer implements RemoteDeployer {
 			copyRemoteFile(parent, target.getDeployMetaInfo(), deployPath);
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new DeployException("copy remote file failed: "
-					+ e.getMessage(), e);
+			throw new DeployException("copy remote file failed.", e);
 		}
 
 	}
@@ -109,8 +108,7 @@ public class DefaultRemoteDeployer implements RemoteDeployer {
 				FileUtils.forceDelete(file);
 			} catch (IOException e) {
 				e.printStackTrace();
-				throw new DeployException("When the delete errors: "
-						+ e.getMessage(), e);
+				throw new DeployException("delete file failed: "+file, e);
 			}
 		}
 	}

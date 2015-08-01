@@ -13,7 +13,7 @@ public abstract class AbstractRemoteFactoryBean extends AbstractFactoryBean {
 		try {
 			return createInstance().getClass();
 		} catch (Exception e) {
-			throw new BeanCreationException("create failed. " + e.getMessage(),
+			throw new BeanCreationException("create Remote failed: " + getHandle(),
 					e);
 		}
 	}
