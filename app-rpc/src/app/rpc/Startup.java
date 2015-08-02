@@ -18,7 +18,7 @@ public class Startup {
 	}
 
 	public static void main(String[] args) throws IOException {
-		String conf = System.getProperty("config", "./config/");
+		String conf = System.getProperty("config", "../conf/");
 
 		// log4j configure
 		String log4jFile = System.getProperty("log4j",conf+"log4j.properties");

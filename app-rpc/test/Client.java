@@ -26,7 +26,7 @@ public class Client {
 	private static String URL = "localhost/dtest/";// "s1.my-rice.org/deploy-test/";//
 	private static String HANDLE = "hello";
 	private static boolean EXE = true;
-	private static boolean RS = false;
+	private static boolean RS = true;
 	private static boolean PRINT = true;
 	private static boolean GATEWAY = false;
 
