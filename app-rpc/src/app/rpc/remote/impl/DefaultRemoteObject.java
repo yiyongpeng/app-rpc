@@ -30,11 +30,9 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 		return session;
 	}
 
-	public Object invoke(Object proxy, Method method, Object[] args)
-			throws Throwable {
+	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (closed) {
-			System.err.println("invoke fault! Object is Closed: " + session.getInetAddress()
-					+ "  handle: " + getHandle());
+			System.err.println("invoke fault! Object is Closed: " + session.getInetAddress() + "  handle: " + getHandle());
 			return null;
 		}
 		Object value = rv.invoke(this, method, args);
@@ -64,7 +62,7 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 
 	public void close() {
 		this.closed = true;
-		if(rv!=null){
+		if (rv != null) {
 			rv.destory();
 			rv = null;
 		}
@@ -75,26 +73,32 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 		interfaces = null;
 		session = null;
 	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();
 	}
+
 	public RemoteMethod mapping(Method method) {
 		RemoteMethod remoteMethod = cachedMethods.get(method);
 		if (remoteMethod == null) {
-			String methodString = DefaultRemoteMethod.getMethodString(method);
-			remoteMethod = methods.getMethod(methodString);
-			if (remoteMethod != null) {
-				remoteMethod.setMethod(method);
-				cachedMethods.put(method, remoteMethod);
+			synchronized (method) {
+				remoteMethod = cachedMethods.get(method);
+				if(remoteMethod!=null)
+					return remoteMethod;
+				String methodString = DefaultRemoteMethod.getMethodString(method);
+				remoteMethod = methods.getMethod(methodString);
+				if (remoteMethod != null) {
+					remoteMethod.setMethod(method);
+					cachedMethods.put(method, remoteMethod);
+				}
 			}
 		}
 		return remoteMethod;
 	}
 
-	public DefaultRemoteObject(ObjectSession session, String handle,
-			ClassLoader loader, Class<?>... interfaces) {
+	public DefaultRemoteObject(ObjectSession session, String handle, ClassLoader loader, Class<?>... interfaces) {
 		this.session = ((DefaultObjectConnection) session);
 		this.handle = handle;
 		this.interfaces = interfaces;
@@ -121,7 +125,7 @@ public class DefaultRemoteObject implements RemoteObject, InvocationHandler {
 			rv.validate(this);
 			suc = true;
 		} finally {
-			if(suc==false){
+			if (suc == false) {
 				rv.destory();
 				rv = null;
 			}
