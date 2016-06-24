@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema targetNamespace="http://www.my-rice.org/schema/remote"
-	elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://www.my-rice.org/schema/remote" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans">
+<xsd:schema targetNamespace="http://www.app-cloub.com/schema/remote"
+	elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns="http://www.app-cloub.com/schema/remote" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans">
 
 	<xsd:import namespace="http://www.springframework.org/schema/beans" />
 
