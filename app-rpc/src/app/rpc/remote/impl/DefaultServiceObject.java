@@ -1,10 +1,13 @@
 package app.rpc.remote.impl;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import app.rpc.remote.ObjectResponse;
+import app.rpc.remote.ObjectSession;
 import app.rpc.remote.RemoteMethod;
 import app.rpc.remote.RemoteMethodCollection;
 import app.rpc.remote.ServiceObject;
@@ -32,8 +35,7 @@ public class DefaultServiceObject extends POJO implements ServiceObject {
 	// this.methods = methods;
 	// }
 
-	public DefaultServiceObject(String handle, Object instance,
-			Class<?>... interfaces) {
+	public DefaultServiceObject(String handle, Object instance, Class<?>... interfaces) {
 		this();
 		this.handle = handle;
 		this.instance = instance;
@@ -49,22 +51,30 @@ public class DefaultServiceObject extends POJO implements ServiceObject {
 		for (int i = 0; i < interfaces.length; i++) {
 			String classname = interfaces[i].getName();
 			interfaces[i] = searchInterface(instance.getClass(), classname);
-			if(interfaces[i]==null){
-				throw new RuntimeException(instance.getClass()+" not found interface : "+classname);
+			if (interfaces[i] == null) {
+				throw new RuntimeException(instance.getClass() + " not found interface : " + classname);
 			}
 		}
 		return interfaces;
 	}
 
 	protected Class<?> searchInterface(Class<?> clazz, String classname) {
-		Class<?> [] inters = clazz.getInterfaces();
+		Class<?>[] inters = clazz.getInterfaces();
 		for (int i = 0; i < inters.length; i++) {
-			if(inters[i].getName().equals(classname)){
-				return inters[i];
+			Class<?> interfac = inters[i];
+			if (interfac.getName().equals(classname)) {
+				return interfac;
+			}
+			Class<?>[] interfaces = interfac.getInterfaces();
+			for (int j = 0; j < interfaces.length; j++) {
+				interfac = interfaces[i];
+				if (interfac.getName().equals(classname)) {
+					return interfac;
+				}
 			}
 		}
 		clazz = clazz.getSuperclass();
-		if(clazz!=null){
+		if (clazz != null) {
 			return searchInterface(clazz, classname);
 		}
 		return null;
@@ -76,9 +86,9 @@ public class DefaultServiceObject extends POJO implements ServiceObject {
 
 		// Invoke method
 		method.invoke(response, this, args);
-		
+
 	}
-	
+
 	public void init() {
 		try {
 			Method method = this.instance.getClass().getMethod("onRemoteInit");
