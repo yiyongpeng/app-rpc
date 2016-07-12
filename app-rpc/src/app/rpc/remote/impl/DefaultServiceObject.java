@@ -65,7 +65,7 @@ public class DefaultServiceObject extends POJO implements ServiceObject {
 			}
 			Class<?>[] interfaces = interfac.getInterfaces();
 			for (int j = 0; j < interfaces.length; j++) {
-				interfac = interfaces[i];
+				interfac = interfaces[j];
 				if (interfac.getName().equals(classname)) {
 					return interfac;
 				}
