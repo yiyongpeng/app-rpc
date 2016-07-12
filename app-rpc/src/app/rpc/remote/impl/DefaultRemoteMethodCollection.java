@@ -22,9 +22,8 @@ import app.rpc.remote.RemoteMethodCollection;
  * @author yiyongpeng
  * 
  */
-public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
-		implements RemoteMethodCollection, Comparator<RemoteMethod> {
-	
+public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod> implements RemoteMethodCollection, Comparator<RemoteMethod> {
+
 	public int getInvokeHandle() {
 		return invokeHandle;
 	}
@@ -44,24 +43,23 @@ public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
 			Class<?> clazz = loader.loadClass(DefaultRemoteMethodFactory.class.getName());
 			Method fmethod = clazz.getMethod("createRemoteMethod", int.class, ClassLoader.class, Method.class);
 			Method[] methds = interfac.getMethods();
-			for (Method method : methds) try{
-				String name = DefaultRemoteMethod.getMethodString(method);
-				Map<Object, RemoteMethod> map = getMethodsMap();
-				if (map.containsKey(name))
-					continue;
-				RemoteMethod rMethod = (RemoteMethod) fmethod.invoke(null, size(), loader, method);
-				if (add(rMethod)) {
-					map.put(name, rMethod);
+			for (Method method : methds)
+				try {
+					String name = DefaultRemoteMethod.getMethodString(method);
+					Map<Object, RemoteMethod> map = getMethodsMap();
+					if (map.containsKey(name))
+						continue;
+					RemoteMethod rMethod = DefaultServiceObject.enableClassPool ? (RemoteMethod) fmethod.invoke(null, size(), loader, method) : DefaultRemoteMethodFactory.createRemoteMethod(size(), loader, method);
+					if (add(rMethod)) {
+						map.put(name, rMethod);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-			}catch (Exception e) {
-				e.printStackTrace();
-			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 	}
-
-	
 
 	public int compare(RemoteMethod o1, RemoteMethod o2) {
 		return o1.getString().compareTo(o2.getString());
@@ -97,7 +95,7 @@ public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
 			for (Method method : interfac.getMethods()) {
 				String methodStr = DefaultRemoteMethod.getMethodString(method);
 				if (!getMethodsMap().containsKey(methodStr)) {
-					System.err.println("unkown method: " + methodStr+"  =>  "+getMethodsMap().keySet());
+					log.warn(interfac+" Unkown method: "+methodStr);
 				}
 			}
 	}
@@ -112,7 +110,7 @@ public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
 		return methodsMap;
 	}
 
-	public DefaultRemoteMethodCollection(String handle, ClassLoader loader,  Class<?>... interfaces) {
+	public DefaultRemoteMethodCollection(String handle, ClassLoader loader, Class<?>... interfaces) {
 		this.invokeHandle = mappingInvokeHandle(handle);
 		this.loadInterfaces(loader, interfaces);
 	}
@@ -141,8 +139,7 @@ public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
 				if (ih == null) {
 					ih = ++invokeHandleCount;
 					hiTable.put(handle, ih);
-					log.info("Mapping static handle: " + handle
-							+ "  =>   invoke-handle: " + ih);
+					log.info("Mapping Static handle: " + handle + "  =>   invoke-handle: " + ih);
 				}
 			}
 		return ih;
@@ -151,8 +148,7 @@ public class DefaultRemoteMethodCollection extends ArrayList<RemoteMethod>
 	private static Map<String, Integer> hiTable = new HashMap<String, Integer>();
 	private static int invokeHandleCount = 1000;
 
-	private static final Logger log = Logger
-			.getLogger(DefaultServiceObject.class);
+	private static final Logger log = Logger.getLogger(DefaultServiceObject.class);
 
 	private static final long serialVersionUID = -8909652727256247790L;
 

@@ -1,13 +1,10 @@
 package app.rpc.remote.impl;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 import app.rpc.remote.ObjectResponse;
-import app.rpc.remote.ObjectSession;
 import app.rpc.remote.RemoteMethod;
 import app.rpc.remote.RemoteMethodCollection;
 import app.rpc.remote.ServiceObject;
@@ -20,6 +17,7 @@ import app.util.POJO;
  * 
  */
 public class DefaultServiceObject extends POJO implements ServiceObject {
+	public static boolean enableClassPool = true;
 	private String handle;
 	private Object instance;
 	private RemoteMethodCollection methods;

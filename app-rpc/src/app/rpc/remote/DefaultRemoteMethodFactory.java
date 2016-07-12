@@ -12,12 +12,13 @@ import javassist.NotFoundException;
 import org.apache.log4j.Logger;
 
 import app.rpc.remote.impl.DefaultRemoteMethod;
+import app.rpc.remote.impl.DefaultServiceObject;
+import app.util.CodingKit;
 import app.util.ServerMode;
 import app.util.ThreadContext;
 
 public class DefaultRemoteMethodFactory {
 	private static final Logger log = Logger.getLogger(DefaultRemoteMethodFactory.class);
-	public static boolean enableClassPool = true;
 
 	/**
 	 * RemoteMethod工厂方法
@@ -28,17 +29,13 @@ public class DefaultRemoteMethodFactory {
 	 * @throws Exception
 	 */
 	public static RemoteMethod createRemoteMethod(int handle, ClassLoader loader, Method method) throws Exception {
-		Class<?> clazz = proxyRemoteMethod(loader, method, DefaultRemoteMethod.class);
-		DefaultRemoteMethod instance = (DefaultRemoteMethod) clazz.newInstance();
+		DefaultRemoteMethod instance = DefaultServiceObject.enableClassPool ? (DefaultRemoteMethod) proxyRemoteMethod(loader, method, DefaultRemoteMethod.class).newInstance() : new DefaultRemoteMethod();
 		instance.setHandle(handle);
 		instance.parseMethod(method);
 		return instance;
 	}
 
 	public static synchronized Class<?> proxyRemoteMethod(ClassLoader loader, Method method, Class<?> clazz) throws NotFoundException {
-		if (!enableClassPool) {
-			return clazz;
-		}
 		// GenProxy
 //		List<ClassClassPath> cplist = new ArrayList<ClassClassPath>();
 		try {
@@ -53,7 +50,7 @@ public class DefaultRemoteMethodFactory {
 				pool.removeClassPath(cp);
 //				cplist.add(cp);
 			}
-			String id = (Integer.toHexString(loader.hashCode()).toUpperCase() + "c" + Integer.toHexString(clazz.hashCode()).toUpperCase() + "m" + Integer.toHexString(method.toString().hashCode()).toUpperCase()).replace("-", "_");
+			String id = CodingKit.MD5(loader.hashCode()+ "_" +clazz.hashCode() + "_" + method);
 			String proxyClassName = clazz.getName() + "$Proxy" + id;
 			CtClass newClass = null;
 			try {
@@ -92,8 +89,8 @@ public class DefaultRemoteMethodFactory {
 			newClass.addMethod(CtMethod.make(sb.toString(), newClass));
 			clazz = newClass.toClass(loader, null);
 		} catch (Exception e) {
-			enableClassPool = false;
-			System.err.println("proxy RemoteMethod error: " + e);
+			DefaultServiceObject.enableClassPool = false;
+			log.warn("Proxy RemoteMethod Failed: " + e);
 		} finally {
 //			for (ClassClassPath cp : cplist) {
 //				pool.removeClassPath(cp);
